@@ -1,6 +1,10 @@
 ## rsync-server
 
-A `rsyncd`/`sshd` server in Docker. You know, for moving files.
+Status: work in progress
+
+A `rsyncd`/`sshd` server in Docker for testing rsync.
+
+Warning! This container should be used only for test purposes!
 
 
 ### tl;dr
