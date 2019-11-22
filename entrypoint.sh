@@ -8,8 +8,9 @@ function cleanup {
 
 trap 'kill ${!}; cleanup' SIGINT
 trap 'kill ${!}; cleanup' SIGTERM
+trap 'kill ${!}; cleanup' SIGTSTP
 
-
+SSH_AUTH_KEY=${SSH_AUTH_KEY}
 USERNAME=${USERNAME:-user}
 PASSWORD=${PASSWORD:-pass}
 ALLOW=${ALLOW:-192.168.8.0/24 192.168.24.0/24 172.16.0.0/12 127.0.0.1/32}
@@ -17,10 +18,9 @@ VOLUME=${VOLUME:-/data}
 
 if [ "$1" = 'rsync_server' ]; then
 
-    if [ -e "/root/.ssh/authorized_keys" ]; then
-        chmod 400 /root/.ssh/authorized_keys
-        chown root:root /root/.ssh/authorized_keys
-    fi
+    mkdir -p /root/.ssh
+    echo "$SSH_AUTH_KEY" > /root/.ssh/authorized_keys
+
     exec /usr/sbin/sshd &
 
     echo "root:$PASSWORD" | chpasswd
