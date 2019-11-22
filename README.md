@@ -1,12 +1,6 @@
 ## rsync-server
 
-Status: work in progress
-
-A `rsyncd`/`sshd` server in Docker for testing rsync.
-This container will clear his `/data` folder before stop.
-
-Warning! This container should be used only for testing purposes!
-Do not use it in production!
+A `rsyncd`/`sshd` server in Docker.
 
 
 ### tl;dr
@@ -18,6 +12,7 @@ $ docker run \
     --name rsync-server \ # Name it
     -p 8000:873 \ # rsyncd port
     -p 9000:22 \ # sshd port
+    -e SSH_AUTH_USERNAME="<your_username>" # username to auth by ssh
     -e SSH_AUTH_KEY="<you_ssh_key>" \ # ssh key
     -v /you/local/path:/data
     justskiv/rsync-test-server
@@ -67,8 +62,8 @@ total size is 0  speedup is 0.00
 
 Variable options (on run)
 
-* `USERNAME` - the `rsync` username. defaults to `user`
-* `PASSWORD` - the `rsync` password. defaults to `pass`
+* `SSH_AUTH_KEY` - the `rsync` password. Required.
+* `SSH_AUTH_USERNAME` - username to authenticate by ssh . defaults to `docker`
 * `VOLUME`   - the path for `rsync`. defaults to `/data`
 * `ALLOW`    - space separated list of allowed sources. defaults to `192.168.0.0/16 172.16.0.0/12`.
 
@@ -76,25 +71,15 @@ Variable options (on run)
 ##### Simple server on port 873
 
 ```
-$ docker run -p 873:873 axiom/rsync-server
+$ docker run -p 873:873 justskiv/rsync-test-server \
+    -e SSH_AUTH_KEY="<you_ssh_key>" \ # ssh key
 ```
 
 
 ##### Use a volume for the default `/data`
 
 ```
-$ docker run -p 873:873 -v /your/folder:/data axiom/rsync-server
-```
-
-##### Set a username and password
-
-```
-$ docker run \
-    -p 873:873 \
-    -v /your/folder:/data \
-    -e USERNAME=admin \
-    -e PASSWORD=mysecret \
-    axiom/rsync-server
+$ docker run -p 873:873 -v /your/folder:/data justskiv/rsync-test-server
 ```
 
 ##### Run on a custom port
@@ -103,9 +88,8 @@ $ docker run \
 $ docker run \
     -p 9999:873 \
     -v /your/folder:/data \
-    -e USERNAME=admin \
-    -e PASSWORD=mysecret \
-    axiom/rsync-server
+    -e SSH_AUTH_KEY="<you_ssh_key>" \ # ssh key
+    justskiv/rsync-test-server
 ```
 
 ```
@@ -120,10 +104,9 @@ volume            /data directory
 $ docker run \
     -p 9999:873 \
     -v /your/folder:/myvolume \
-    -e USERNAME=admin \
-    -e PASSWORD=mysecret \
     -e VOLUME=/myvolume \
-    axiom/rsync-server
+    -e SSH_AUTH_KEY="<you_ssh_key>" \ # ssh key
+    justskiv/rsync-test-server
 ```
 
 ```
@@ -137,21 +120,19 @@ volume            /myvolume directory
 $ docker run \
     -p 9999:873 \
     -v /your/folder:/myvolume \
-    -e USERNAME=admin \
-    -e PASSWORD=mysecret \
+    -e SSH_AUTH_KEY="<you_ssh_key>" \ # ssh key
     -e VOLUME=/myvolume \
     -e ALLOW=192.168.8.0/24 192.168.24.0/24 172.16.0.0/12 127.0.0.1/32 \
-    axiom/rsync-server
+    justskiv/rsync-test-server
 ```
 
 
 ##### Over SSH
 
-If you would like to connect over ssh, you may mount your public key or
-`authorized_keys` file to `/root/.ssh/authorized_keys`.
+If you would like to connect over ssh, you have to give your public key as an env variable
+ `SSH_AUTH_KEY`
 
-Without setting up an `authorized_keys` file, you will be propted for the
-password (which was specified in the `PASSWORD` variable).
+Also you can set username to auth: `SSH_AUTH_USERNAME`
 
 Please note that when using `sshd` **you will be specifying the actual folder
 destination as you would when using SSH.** On the contrary, when using the
@@ -161,15 +142,14 @@ inside of the container.
 ```
 docker run \
     -v /your/folder:/myvolume \
-    -e USERNAME=admin \
-    -e PASSWORD=mysecret \
+    -e SSH_AUTH_USERNAME="username" # username to auth by ssh
+    -e SSH_AUTH_KEY="<you_ssh_key>" \ # ssh key
     -e VOLUME=/myvolume \
     -e ALLOW=192.168.8.0/24 192.168.24.0/24 172.16.0.0/12 127.0.0.1/32 \
-    -v /my/authorized_keys:/root/.ssh/authorized_keys \
     -p 9000:22 \
-    axiom/rsync-server
+    justskiv/rsync-test-server
 ```
 
 ```
-$ rsync -av -e "ssh -i /your/private.key -p 9000 -l root" /your/folder/ localhost:/data
+$ rsync -av -e "ssh -i /your/private.key -p 9000" /your/folder/ username@localhost:/data
 ```
