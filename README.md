@@ -3,8 +3,10 @@
 Status: work in progress
 
 A `rsyncd`/`sshd` server in Docker for testing rsync.
+This container will clear his `/data` folder before stop.
 
-Warning! This container should be used only for test purposes!
+Warning! This container should be used only for testing purposes!
+Do not use it in production!
 
 
 ### tl;dr
@@ -16,10 +18,9 @@ $ docker run \
     --name rsync-server \ # Name it
     -p 8000:873 \ # rsyncd port
     -p 9000:22 \ # sshd port
-    -e USERNAME=user \ # rsync username
-    -e PASSWORD=pass \ # rsync/ssh password
-    -v /your/public.key:/root/.ssh/authorized_keys \ # your public key
-    axiom/rsync-server
+    -e SSH_AUTH_KEY="<you_ssh_key>" \ # ssh key
+    -v /you/local/path:/data
+    justskiv/rsync-test-server
 ```
 
 #### `rsyncd`
