@@ -1,6 +1,15 @@
 #!/bin/bash
 set -e
 
+function cleanup {
+  echo "Removing /data/*"
+  rm -rf /data/*
+}
+
+trap 'kill ${!}; cleanup' SIGINT
+trap 'kill ${!}; cleanup' SIGTERM
+
+
 USERNAME=${USERNAME:-user}
 PASSWORD=${PASSWORD:-pass}
 ALLOW=${ALLOW:-192.168.8.0/24 192.168.24.0/24 172.16.0.0/12 127.0.0.1/32}
@@ -40,7 +49,11 @@ if [ "$1" = 'rsync_server' ]; then
         secrets file = /etc/rsyncd.secrets
 EOF
 
-    exec /usr/bin/rsync --no-detach --daemon --config /etc/rsyncd.conf "$@"
+    exec /usr/bin/rsync --no-detach --daemon --config /etc/rsyncd.conf "$@" &
 fi
 
-exec "$@"
+# wait forever
+while true
+do
+  tail -f /dev/null & wait ${!}
+done
