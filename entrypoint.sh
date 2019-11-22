@@ -1,29 +1,24 @@
 #!/bin/bash
 set -e
 
-function cleanup {
-  echo "Removing /data/*"
-  rm -rf /data/*
-}
-
-trap 'kill ${!}; cleanup' SIGINT
-trap 'kill ${!}; cleanup' SIGTERM
-trap 'kill ${!}; cleanup' SIGTSTP
-
 SSH_AUTH_KEY=${SSH_AUTH_KEY}
-USERNAME=${USERNAME:-user}
-PASSWORD=${PASSWORD:-pass}
+
+CUSTOM_USERNAME=${CUSTOM_USERNAME:-docker}
+CUSTOM_UID=${CUSTOM_UID:-1000}
+CUSTOM_GID=${CUSTOM_GID:-1000}
+
+groupadd -g "$CUSTOM_GID" "$CUSTOM_USERNAME"
+useradd -g "$CUSTOM_GID" -u "$CUSTOM_UID" "$CUSTOM_USERNAME"
+
 ALLOW=${ALLOW:-192.168.8.0/24 192.168.24.0/24 172.16.0.0/12 127.0.0.1/32}
 VOLUME=${VOLUME:-/data}
 
 if [ "$1" = 'rsync_server' ]; then
 
-    mkdir -p /root/.ssh
-    echo "$SSH_AUTH_KEY" > /root/.ssh/authorized_keys
+    mkdir -p /home/"$CUSTOM_USERNAME"/.ssh
+    echo "$SSH_AUTH_KEY" > /home/"$CUSTOM_USERNAME"/.ssh/authorized_keys
 
     exec /usr/sbin/sshd &
-
-    echo "root:$PASSWORD" | chpasswd
 
     echo "$USERNAME:$PASSWORD" > /etc/rsyncd.secrets
     chmod 0400 /etc/rsyncd.secrets
@@ -49,11 +44,5 @@ if [ "$1" = 'rsync_server' ]; then
         secrets file = /etc/rsyncd.secrets
 EOF
 
-    exec /usr/bin/rsync --no-detach --daemon --config /etc/rsyncd.conf "$@" &
+    exec /usr/bin/rsync --no-detach --daemon --config /etc/rsyncd.conf "$@"
 fi
-
-# wait forever
-while true
-do
-  tail -f /dev/null & wait ${!}
-done
